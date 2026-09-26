@@ -16,6 +16,14 @@ const MARGEN_ENTRE_IMAGENES = 16; // separación mínima entre decoraciones
 const MARGEN_GRID = 14; // separación mínima respecto a la cuadrícula
 const INTENTOS_MAXIMOS = 300;
 
+// En pantallas angostas usa imágenes más chicas para que sigan
+// cabiendo sin amontonarse ni desaparecer por falta de espacio.
+function calcularRangoAncho(anchoPagina) {
+  if (anchoPagina < 420) return { min: 46, max: 64 };
+  if (anchoPagina < 720) return { min: 60, max: 88 };
+  return { min: ANCHO_MIN, max: ANCHO_MAX };
+}
+
 function numeroAleatorio(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -60,18 +68,20 @@ async function colocarDecoraciones() {
 
   const imagenes = await Promise.all(IMAGENES_DECORATIVAS.map(cargarImagen));
   const colocadas = [];
+  const rangoAncho = calcularRangoAncho(anchoPagina);
+  const margenBorde = anchoPagina < 420 ? 10 : MARGEN_BORDE;
 
   imagenes.forEach(({ ruta, ancho: anchoNatural, alto: altoNatural }) => {
-    const ancho = numeroAleatorio(ANCHO_MIN, ANCHO_MAX);
+    const ancho = numeroAleatorio(rangoAncho.min, rangoAncho.max);
     const alto = ancho * (altoNatural / anchoNatural);
 
-    const limiteAncho = Math.max(anchoPagina - ancho - MARGEN_BORDE, MARGEN_BORDE);
-    const limiteAlto = Math.max(altoPagina - alto - MARGEN_BORDE, MARGEN_BORDE);
+    const limiteAncho = Math.max(anchoPagina - ancho - margenBorde, margenBorde);
+    const limiteAlto = Math.max(altoPagina - alto - margenBorde, margenBorde);
 
     let mejorRect = null;
     for (let intento = 0; intento < INTENTOS_MAXIMOS; intento++) {
-      const left = numeroAleatorio(MARGEN_BORDE, limiteAncho);
-      const top = numeroAleatorio(MARGEN_BORDE, limiteAlto);
+      const left = numeroAleatorio(margenBorde, limiteAncho);
+      const top = numeroAleatorio(margenBorde, limiteAlto);
       const rect = { left, top, right: left + ancho, bottom: top + alto };
 
       const chocaConGrid = seSuperponen(rect, zonaGrid, MARGEN_GRID);
